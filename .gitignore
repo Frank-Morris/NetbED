@@ -1,3 +1,21 @@
+# Vagrant 
+# Prevents Vagrant's local state from being committed.
+.vagrant/
+
+# Ansible
+# Ignores temporary retry files.
+*.retry
+
+# Operating System files
+# Ignores system-specific metadata files.
+.DS_Store
+Thumbs.db
+
+# Visual Studio Code
+# Ignores user-specific editor settings.
+.vscode/
+*.code-workspace
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
