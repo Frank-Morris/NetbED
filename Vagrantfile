@@ -23,7 +23,7 @@ Vagrant.configure("2") do |config|
     #Sets the static ip for web servers
     ubuntu.vm.network "private_network", ip: "192.168.20.10"
     #Runs ansible playbook
-    ubuntu.vm.provision "ansible", playbook: "playbook.yml"
+    ubuntu.vm.provision "ansible_local", playbook: "playbook.yml"
   end
 
 #This is the config for the attacker machine.
