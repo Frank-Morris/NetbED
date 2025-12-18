@@ -24,25 +24,30 @@ Vagrant.configure("2") do |config|
     ubuntu.vm.network "private_network", ip: "10.0.4.2", virtualbox__intnet: "intnet-dmz"
     #Runs ansible playbook
     ubuntu.vm.provision "ansible_local", playbook: "ansible/web-server.yml"
-  end
+end
 
 #This is the config for the attacker machine.
   config.vm.define "attacker" do |kali|
     kali.vm.box = kali_box
     kali.vm.hostname = "attacker"
     kali.vm.network "private_network", ip: "10.0.3.2", virtualbox__intnet: "intnet-attacker"
-  end
+end
+
+
 #This is the config for the Domain-Controller.
   config.vm.define "domain-controller" do |dc|
     dc.vm.box = "dstoliker/winserver2016-dc"
     dc.vm.hostname = "domain-controller"
-    dc.vm.network "private_network", ip: "10.0.1.2"
-  end
+    dc.vm.network "private_network", ip: "10.0.1.2", virtualbox__intnet: "intnet-lan"
+end
+
+
+
 #This is the config for the Windows Client
   config.vm.define "client" do |client|
     client.vm.box = "sva-mk/Windows-10"
     client.vm.hostname = "client"
-    client.vm.network "private_network", ip: "10.0.1.3"
+    client.vm.network "private_network", ip: "10.0.1.3", virtualbox__intnet: "intnet-lan"
     client.ssh.username = "vagrant"
     client.ssh.password = "vagrant" 
 
@@ -51,6 +56,22 @@ Vagrant.configure("2") do |config|
     v.cpus = 2
     v.customize ["modifyvm", :id, "--vram", "128"]
     v.customize ["modifyvm", :id, "--graphicscontroller", "vmsvga"]
-  end
 end
+
+
+
+#This is the config for the pfsense firewall
+ config.vm.define "pfsense" do |pf|
+  pf.vm.box ="hichemlamine/pfsense-2.7.2"
+  pf.vm.hostname = "pfsense"
+  pf.vm.network "private_network", ip: "10.0.1.1", virtualbox__intnet: "intnet-lan"
+  pf.vm.network "private_network", ip: "10.0.3.1", virtualbox__intnet: "intnet-attacker"
+  pf.vm.network "private_network", ip: "10.0.4.1", virtualbox__intnet: "intnet-dmz"
+  
+  pf.vm.provider "virtualbox" do |v|
+    v.memory = 1024
+    v.cpus = 1
+end
+end
+  end
 end
