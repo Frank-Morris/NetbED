@@ -56,13 +56,13 @@ end
     v.cpus = 2
     v.customize ["modifyvm", :id, "--vram", "128"]
     v.customize ["modifyvm", :id, "--graphicscontroller", "vmsvga"]
+ end
 end
 
 
-
 #This is the config for the pfsense firewall
- config.vm.define "pfsense" do |pf|
-  pf.vm.box ="hichemlamine/pfsense-2.7.2"
+config.vm.define "pfsense" do |pf|
+  pf.vm.box ="nandillonmax/Pfsense-max"
   pf.vm.hostname = "pfsense"
   pf.vm.network "private_network", ip: "10.0.1.1", virtualbox__intnet: "intnet-lan"
   pf.vm.network "private_network", ip: "10.0.3.1", virtualbox__intnet: "intnet-attacker"
@@ -71,7 +71,6 @@ end
   pf.vm.provider "virtualbox" do |v|
     v.memory = 1024
     v.cpus = 1
+ end
 end
-end
-  end
 end
