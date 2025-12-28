@@ -19,11 +19,6 @@ class NetbedLab:
         def github_link():
             webbrowser.open_new_tab()
 
-        #Create a github label with url link. Just testing this currently
-        link = tk.Label(window, text="GitHub",font=('Helveticabold', 10), fg="blue", cursor="hand2")
-        link.pack(anchor="center", side="bottom", pady=10)
-        link.bind("<Button-1>", lambda e: github_link("https://github.com/Frank-Morris"))
-
         # 2. Creates the start button which will run the command "Vagrant Up"
         self.start_btn = tk.Button(window, text="Start Lab", width=20, bg="green", fg="white", command=self.start_lab)
         self.start_btn.pack(pady=10)
