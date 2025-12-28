@@ -42,23 +42,33 @@ end
 end
 
 
-
+########################################################################################################################################################################################################
 #This is the config for the Windows Client
   config.vm.define "client" do |client|
     client.vm.box = "sva-mk/Windows-10"
-    client.vm.hostname = "client"
-    client.vm.network "private_network", ip: "10.0.1.3", virtualbox__intnet: "intnet-lan"
+    client.vm.communicator = "winrm"
+    client.vm.guest = :windows
+    client.winrm.retry_limit = 30
+    client.winrm.retry_delay = 10
+    client.vm.boot_timeout = 600
+    client.vm.network "private_network", ip: "10.0.1.3", auto_config: false, virtualbox__intnet: "intnet-lan"
     client.ssh.username = "vagrant"
-    client.ssh.password = "vagrant" 
+    client.ssh.password = "vagrant"
 
-  client.vm.provider "virtualbox" do |v|
-    v.memory = 4096
-    v.cpus = 2
-    v.customize ["modifyvm", :id, "--vram", "128"]
-    v.customize ["modifyvm", :id, "--graphicscontroller", "vmsvga"]
+    #Runs shellscript to configure static IP
+    client.vm.provision "shell", path: "scripts/ipconfig.ps1"
+
+
+  
+
+    client.vm.provider "virtualbox" do |v|
+      v.memory = 4096
+      v.cpus = 2
+      v.customize ["modifyvm", :id, "--vram", "128"]
+      v.customize ["modifyvm", :id, "--graphicscontroller", "vmsvga"]
  end
 end
-
+##################################################################################################################################################################################################
 
 #This is the config for the pfsense firewall
 config.vm.define "pfsense" do |pf|
