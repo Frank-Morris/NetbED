@@ -54,7 +54,13 @@ end
     client.vm.network "private_network", ip: "10.0.1.3", auto_config: false, virtualbox__intnet: "intnet-lan"
     client.ssh.username = "vagrant"
     client.ssh.password = "vagrant"
-
+    
+    #sets hostname of machine
+    client.vm.provision "shell", path: "scripts/hostname.ps1"
+    
+    #reloads machine to confirm the hostname change.
+    client.vm.provision "reload"
+    
     #Runs shellscript to configure static IP
     client.vm.provision "shell", path: "scripts/ipconfig.ps1"
 
