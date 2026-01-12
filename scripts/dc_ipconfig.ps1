@@ -1,8 +1,7 @@
  Write-Host "Vagrant is running shell scrip to configure the static ip address."
- $staticIp = "10.0.1.3"
+ $staticIp = "10.0.1.2"
       $subnet = 24
       $gateway = "10.0.1.1"
-      $dns = "10.0.1.2"
 
     
       #Look for interface not named "Ethernet", and make sure the interface is up, place the object into $adapter container
@@ -18,11 +17,7 @@
                        -IPAddress $staticIp `
                        -PrefixLength $subnet `
                        -DefaultGateway $gateway
-
-         Write-host "Wait 10 seconds to apply network to private"
-         Start-Sleep -Seconds 10
-         Set-NetConnectionProfile -InterfaceAlias $adapter.InterfaceAlias -NetworkCategory Private
      } else {
-        Write-Error "No valid adapter has been located" 
+        Write-Error "You have fecked up" 
      }
    

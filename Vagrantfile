@@ -37,8 +37,12 @@ end
 #This is the config for the Domain-Controller.
   config.vm.define "domain-controller" do |dc|
     dc.vm.box = "dstoliker/winserver2016-dc"
+    dc.vm.communicator ="winrm"
+    dc.vm.guest = :windows
     dc.vm.hostname = "domain-controller"
     dc.vm.network "private_network", ip: "10.0.1.2", virtualbox__intnet: "intnet-lan"
+
+    dc.vm.provision "shell", path: "scripts/dc_ipconfig.ps1"
 end
 
 
