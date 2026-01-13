@@ -1,0 +1,25 @@
+---
+- name: Configure Attacker machines
+  hosts: all
+  become: true
+  tasks:
+  #Network configuration ( static ip)
+    - name: Add an Ethernet connection with static IP configuration
+      community.general.nmcli:
+        conn_name: LabEth
+        ifname: eth1
+        type: ethernet
+        ip4: 10.0.3.2/24
+        gw4: 10.0.3.1
+        state: present
+        conn_reload: true
+      notify: Restart Networking
+
+  handlers:
+    - name: Restart Networking
+      service:
+        name: networking
+        state: restarted
+
+
+
