@@ -31,6 +31,8 @@ end
     kali.vm.box = kali_box
     kali.vm.hostname = "attacker"
     kali.vm.network "private_network", ip: "10.0.3.2", virtualbox__intnet: "intnet-attacker"
+
+    kali.vm.provision "ansible_local", playbook: "ansible/attacker.yml" 
 end
 
 
@@ -43,6 +45,8 @@ end
     dc.vm.network "private_network", ip: "10.0.1.2", virtualbox__intnet: "intnet-lan"
 
     dc.vm.provision "shell", path: "scripts/dc_ipconfig.ps1"
+    dc.vm.provision "reload"
+    dc.vm.provision "shell", path: "scripts/dc_hostname.ps1"
 end
 
 
