@@ -24,6 +24,9 @@ Vagrant.configure("2") do |config|
     ubuntu.vm.network "private_network", ip: "10.0.4.2", virtualbox__intnet: "intnet-dmz"
     #Runs ansible playbook
     ubuntu.vm.provision "ansible_local", playbook: "ansible/web-server.yml"
+    ubuntu.vm.provider "virtualbox" do |v|
+      v.name = "Web Server"
+  end 
 end
 
 #This is the config for the attacker machine.
@@ -33,6 +36,9 @@ end
     kali.vm.network "private_network", ip: "10.0.3.2", virtualbox__intnet: "intnet-attacker"
 
     kali.vm.provision "ansible_local", playbook: "ansible/attacker.yml" 
+    kali.vm.provider "virtualbox" do |v|
+      v.name = "Attacker"
+  end
 end
 
 
@@ -47,6 +53,9 @@ end
     dc.vm.provision "shell", path: "scripts/dc_ipconfig.ps1"
     dc.vm.provision "reload"
     dc.vm.provision "shell", path: "scripts/dc_hostname.ps1"
+    dc.vm.provider "virtualbox" do |v|
+      v.name = "Domain Controller"
+  end
 end
 
 
@@ -71,8 +80,7 @@ end
     
     #Runs shellscript to configure static IP
     client.vm.provision "shell", path: "scripts/ipconfig.ps1"
-
-
+  
   
 
     client.vm.provider "virtualbox" do |v|
@@ -80,6 +88,7 @@ end
       v.cpus = 2
       v.customize ["modifyvm", :id, "--vram", "128"]
       v.customize ["modifyvm", :id, "--graphicscontroller", "vmsvga"]
+      v.name = "Client"
  end
 end
 ##################################################################################################################################################################################################
@@ -87,14 +96,34 @@ end
 #This is the config for the pfsense firewall
 config.vm.define "pfsense" do |pf|
   pf.vm.box ="nandillonmax/Pfsense-max"
-  pf.vm.hostname = "pfsense"
-  pf.vm.network "private_network", ip: "10.0.1.1", virtualbox__intnet: "intnet-lan"
-  pf.vm.network "private_network", ip: "10.0.3.1", virtualbox__intnet: "intnet-attacker"
-  pf.vm.network "private_network", ip: "10.0.4.1", virtualbox__intnet: "intnet-dmz"
+  pf.vm.synced_folder ".", "/vagrant", disabled: true
+
+  pf.vm.guest = :openbsd
+
+  pf.vm.network "private_network", ip: "10.0.1.1", virtualbox__intnet: "intnet-lan", auto_config: false
+  pf.vm.network "private_network", ip: "10.0.3.1", virtualbox__intnet: "intnet-attacker", auto_config: false
+  pf.vm.network "private_network", ip: "10.0.4.1", virtualbox__intnet: "intnet-dmz", auto_config: false
+  pf.vm.allow_hosts_modification = false
+
+  pf.ssh.shell = "/bin/sh"
   
   pf.vm.provider "virtualbox" do |v|
+    v.name = "Pfsense"
     v.memory = 1024
     v.cpus = 1
  end
+
+  pf.ssh.insert_key = false
+  pf.ssh.username = "root"
+  pf.ssh.password = "pfsense"
+  pf.ssh.shell = "/bin/sh"
+  
+
+
+
+  pf.vm.provision "file", source: "pfsense_config.xml", destination: "/tmp/pfsense_config.xml"
+  pf.vm.provision "shell", 
+    privileged: false,
+    inline: "cp /tmp/pfsense_config.xml /conf/config.xml && rm -f /tmp/config.cache && (daemon -f sh -c 'sleep 5 && pkill -9 sshd && pfctl -e') && (daemon -f /usr/local/bin/php -f /etc/rc.reload_all) && echo 'SUCCESS: Deployment complete. Firewall will engage in 5 seconds.'"
 end
 end
