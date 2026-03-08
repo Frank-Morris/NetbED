@@ -10,7 +10,7 @@ class NetbedLab:
         # Expanded window to fit the console
         self.window.geometry("800x450") 
 
-        # --- Modular Node Configuration ---
+        # Modular Node Configuration
         self.nodes = {
             "attacker": tk.BooleanVar(value=False),
             "web-server": tk.BooleanVar(value=False),
@@ -18,7 +18,7 @@ class NetbedLab:
             "client": tk.BooleanVar(value=False)
         }
 
-        # --- GUI Layout ---
+        # GUI Layout
         # Title
         self.title_label = tk.Label(window, text="NetbED Control Panel", font=("Arial", 16, "bold"))
         self.title_label.grid(row=0, column=0, columnspan=2, pady=10)
@@ -51,7 +51,7 @@ class NetbedLab:
         self.console.pack()
         self.log_to_console("System Initialized. Ready for deployment.\n")
 
-    # --- Modular Logic ---
+    # Modular Logic
     def open_config(self):
         # Opens a pop-up to select specific nodes. 
         config_win = Toplevel(self.window)
