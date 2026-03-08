@@ -53,7 +53,7 @@ class NetbedLab:
 
     # --- Modular Logic ---
     def open_config(self):
-        """ Opens a pop-up to select specific nodes. """
+        # Opens a pop-up to select specific nodes. 
         config_win = Toplevel(self.window)
         config_win.title("Node Selection")
         config_win.geometry("250x250")
@@ -69,20 +69,20 @@ class NetbedLab:
         tk.Button(config_win, text="Save & Close", command=config_win.destroy).pack(pady=15)
 
     def get_selected_nodes(self):
-        """ Returns a string of selected node names. """
+        # Returns a string of selected node names. 
         selected = ["pfsense"] + [name for name, var in self.nodes.items() if var.get()]
         return " ".join(selected)
 
-    # --- Console Logging Logic ---
+    #  Console Logging Logic 
     def log_to_console(self, text):
-        """ Safely inserts text into the console and scrolls to the bottom. """
+         # Safely inserts text into the console and scrolls to the bottom. 
         self.console.insert(tk.END, text)
         self.console.see(tk.END)
 
     def run_subprocess(self, command):
-        """ Executes the CLI command in a separate thread to prevent GUI freezing. """
+        # Executes the CLI command in a separate thread to prevent GUI freezing.
         def execute():
-            # 1. Disable the buttons (Using .after to safely update the GUI from this thread)
+            # Disable the buttons 
             self.window.after(0, self.set_gui_state, tk.DISABLED)
             self.log_to_console(f"\n>> EXECUTING: {command}\n")
             # Starts the background process and pipes the output
@@ -90,18 +90,17 @@ class NetbedLab:
             
             # Reads the output line by line as it generates
             for line in process.stdout:
-                # Use window.after to safely update the GUI from this background thread
                 self.window.after(0, self.log_to_console, line)
             
             process.wait()
             self.window.after(0, self.log_to_console, f">> COMMAND FINISHED with exit code {process.returncode}\n")
-            # 2. Re-enable the buttons once Vagrant has released the machine locks
+            # Re-enable the buttons 
             self.window.after(0, self.set_gui_state, tk.NORMAL)
 
         # Start the thread
         threading.Thread(target=execute, daemon=True).start()
 
-    # --- Button Commands ---
+    # Button Commands 
     def start_lab(self):
         selected = self.get_selected_nodes()
         if not selected:
