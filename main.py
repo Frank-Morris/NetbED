@@ -1,57 +1,133 @@
 import tkinter as tk
-from tkinter import messagebox
-import os
-import webbrowser
+from tkinter import messagebox, Toplevel, scrolledtext
+import subprocess
+import threading
 
-# The NetbedLab class handles the window and the logic for the buttons
 class NetbedLab:
     def __init__(self, window):
-        # Setup the main window properties
         self.window = window
-        self.window.title("NetbED")
-        self.window.geometry("400x300")
+        self.window.title("NetbED - Automated Lab Provisioner")
+        # Expanded window to fit the console
+        self.window.geometry("800x450") 
 
-        # 1. Creates the header
-        self.title_label = tk.Label(window, text="NetbED Lab Deployer", font=("Arial", 14, "bold"))
-        self.title_label.pack(pady=20)
+        # --- Modular Node Configuration ---
+        self.nodes = {
+            "attacker": tk.BooleanVar(value=False),
+            "web-server": tk.BooleanVar(value=False),
+            "domain-controller": tk.BooleanVar(value=False),
+            "client": tk.BooleanVar(value=False)
+        }
 
-        #Define a callback function
-        def github_link():
-            webbrowser.open_new_tab()
+        # --- GUI Layout ---
+        # Title
+        self.title_label = tk.Label(window, text="NetbED Control Panel", font=("Arial", 16, "bold"))
+        self.title_label.grid(row=0, column=0, columnspan=2, pady=10)
 
-        # 2. Creates the start button which will run the command "Vagrant Up"
-        self.start_btn = tk.Button(window, text="Start Lab", width=20, bg="green", fg="white", command=self.start_lab)
+        # Left Frame: Controls
+        self.control_frame = tk.Frame(window)
+        self.control_frame.grid(row=1, column=0, padx=20, sticky="n")
+
+        self.config_btn = tk.Button(self.control_frame, text="Configure Nodes", width=20, bg="blue", fg="white", command=self.open_config)
+        self.config_btn.pack(pady=5)
+
+        self.start_btn = tk.Button(self.control_frame, text="Start Lab", width=20, bg="green", fg="white", command=self.start_lab)
         self.start_btn.pack(pady=10)
 
-        # 3. Creates the stop button which will run the command "Vagrant Halt"
-        self.stop_btn = tk.Button(window, text="Stop Lab", width=20, command=self.stop_lab)
+        self.stop_btn = tk.Button(self.control_frame, text="Stop Lab", width=20, command=self.stop_lab)
         self.stop_btn.pack(pady=10)
 
-        # 4. Creates the delete button which will run "Vagrant destroy -f"
-        self.destroy_btn = tk.Button(window, text="Delete Lab", width=20, bg="red", fg="white", command=self.delete_lab)
+        self.destroy_btn = tk.Button(self.control_frame, text="Delete Lab", width=20, bg="red", fg="white", command=self.delete_lab)
         self.destroy_btn.pack(pady=10)
 
-    # Function to start the lab
-    def start_lab(self):
-        # os.system sends the command to the terminal as if you typed it in CLI
-        os.system("vagrant up")
-        messagebox.showinfo("Status", "Command 'vagrant up' has been sent.")
 
-    # Function to stop the lab
-    def stop_lab(self):
-        os.system("vagrant halt")
-        messagebox.showinfo("Status", "Command 'vagrant halt' has been sent.")
+        # Right Frame: Log Console
+        self.console_frame = tk.Frame(window)
+        self.console_frame.grid(row=1, column=1, padx=10, sticky="nsew")
+        
+        tk.Label(self.console_frame, text="Live Execution Logs:", font=("Arial", 10, "bold")).pack(anchor="w")
+        
+        # ScrolledText acts as our terminal window
+        self.console = scrolledtext.ScrolledText(self.console_frame, width=70, height=20, bg="black", fg="white", font=("Consolas", 9))
+        self.console.pack()
+        self.log_to_console("System Initialized. Ready for deployment.\n")
 
-    # Function to delete the lab
-    def delete_lab(self):
-        # Message box pop up with Yes/No for user.
-        if messagebox.askyesno("Warning", "Are you sure you want to delete all virtual machines?"):
-            os.system("vagrant destroy -f")
-            messagebox.showwarning("Status", "Lab has been destroyed.")
+    # --- Modular Logic ---
+    def open_config(self):
+        """ Opens a pop-up to select specific nodes. """
+        config_win = Toplevel(self.window)
+        config_win.title("Node Selection")
+        config_win.geometry("250x250")
+
+        tk.Label(config_win, text="Select Target Nodes:", font=("Arial", 10, "bold")).pack(pady=10)
+
+        locked_var = tk.BooleanVar(value=True)
+        tk.Checkbutton(config_win, text="pfSense Gateway (Required)", variable=locked_var, state=tk.DISABLED).pack(anchor="w", padx=30)
+
+        for node_name, var in self.nodes.items():
+            tk.Checkbutton(config_win, text=node_name.capitalize(), variable=var).pack(anchor="w", padx=30)
+
+        tk.Button(config_win, text="Save & Close", command=config_win.destroy).pack(pady=15)
+
+    def get_selected_nodes(self):
+        """ Returns a string of selected node names. """
+        selected = ["pfsense"] + [name for name, var in self.nodes.items() if var.get()]
+        return " ".join(selected)
+
+    # --- Console Logging Logic ---
+    def log_to_console(self, text):
+        """ Safely inserts text into the console and scrolls to the bottom. """
+        self.console.insert(tk.END, text)
+        self.console.see(tk.END)
+
+    def run_subprocess(self, command):
+        """ Executes the CLI command in a separate thread to prevent GUI freezing. """
+        def execute():
+            # 1. Disable the buttons (Using .after to safely update the GUI from this thread)
+            self.window.after(0, self.set_gui_state, tk.DISABLED)
+            self.log_to_console(f"\n>> EXECUTING: {command}\n")
+            # Starts the background process and pipes the output
+            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
             
- 
-   
+            # Reads the output line by line as it generates
+            for line in process.stdout:
+                # Use window.after to safely update the GUI from this background thread
+                self.window.after(0, self.log_to_console, line)
+            
+            process.wait()
+            self.window.after(0, self.log_to_console, f">> COMMAND FINISHED with exit code {process.returncode}\n")
+            # 2. Re-enable the buttons once Vagrant has released the machine locks
+            self.window.after(0, self.set_gui_state, tk.NORMAL)
 
+        # Start the thread
+        threading.Thread(target=execute, daemon=True).start()
+
+    # --- Button Commands ---
+    def start_lab(self):
+        selected = self.get_selected_nodes()
+        if not selected:
+            messagebox.showwarning("Error", "No nodes selected! Check 'Configure Nodes'.")
+            return
+        
+        command = f"vagrant up {selected}"
+        self.run_subprocess(command)
+
+    def stop_lab(self):
+        selected = self.get_selected_nodes()
+        command = f"vagrant halt {selected}"
+        self.run_subprocess(command)
+
+    def delete_lab(self):
+        if messagebox.askyesno("Warning", "Are you sure you want to delete the selected virtual machines?"):
+            selected = self.get_selected_nodes()
+            command = f"vagrant destroy -f {selected}"
+            self.run_subprocess(command)
+
+    def set_gui_state(self, state):
+        # Dynamically enables or disables the controls to prevent concurrent Vagrant locks.
+        self.start_btn.config(state=state)
+        self.stop_btn.config(state=state)
+        self.destroy_btn.config(state=state)
+        self.config_btn.config(state=state)
 
 if __name__ == "__main__":
     root = tk.Tk()
