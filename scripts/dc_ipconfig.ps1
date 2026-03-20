@@ -1,7 +1,9 @@
- Write-Host "Vagrant is running shell scrip to configure the static ip address."
+ Write-Host "Vagrant is running shell scrip to configure the static ip address and networking routes."
  $staticIp = "10.0.1.2"
       $subnet = 24
       $gateway = "10.0.1.1"
+      $dns = "127.0.0.1"
+      $metric = 10
 
     
       #Look for interface not named "Ethernet", and make sure the interface is up, place the object into $adapter container
@@ -17,6 +19,23 @@
                        -IPAddress $staticIp `
                        -PrefixLength $subnet `
                        -DefaultGateway $gateway
+         # 3. Apply Loopback DNS
+         Set-DnsClientServerAddress -InterfaceIndex $adapter.InterfaceIndex -ServerAddresses $dns
+
+         Write-Host "Forcing Windows to stop auto-calculating the metric..."
+         # 1. Turn off Automatic Metric and lower metric for internal network
+         Set-NetIPInterface -InterfaceIndex $adapter.InterfaceIndex -AutomaticMetric Disabled -InterfaceMetric 10
+         Set-NetRoute -DestinationPrefix "0.0.0.0/0" -InterfaceIndex $adapter.InterfaceIndex -RouteMetric 1 -ErrorAction SilentlyContinue
+
+         Write-Host "Configuring Active Directory DNS Forwarders..."
+         Add-DnsServerForwarder -IPAddress "8.8.8.8", "1.1.1.1" -PassThru -ErrorAction SilentlyContinue
+
+         Write-Host "Disabling default vagrant NAT backdoor"
+         # 2. Force the Default Gateway Route to 1
+         Remove-NetRoute -DestinationPrefix "0.0.0.0/0" -NextHop "10.0.2.2" -Confirm:$false -ErrorAction SilentlyContinue
+
+
+         
      } else {
         Write-Error "You have fecked up" 
      }
