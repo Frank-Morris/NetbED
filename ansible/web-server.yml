@@ -21,6 +21,7 @@
                 routes:
                   - to: default
                     via: 10.0.4.1
+                    metric: 50
                 
                 nameservers:
                   addresses: [8.8.8.8, 8.8.4.4]
