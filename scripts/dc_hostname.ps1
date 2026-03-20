@@ -1,6 +1,6 @@
 Write-Host Current host name is set to $env:COMPUTERNAME
 
-$hostname = "Client"
+$hostname = "Domain-Controller"
 
 if ($env:COMPUTERNAME -ne $hostname) {
     Write-Host "Current name: $env:COMPUTERNAME"
