@@ -11,6 +11,7 @@
         type: ethernet
         ip4: 10.0.3.2/24
         gw4: 10.0.3.1
+        route_metric4: 50
         state: present
         conn_reload: true
       notify: Restart Networking
