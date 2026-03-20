@@ -21,7 +21,7 @@ Vagrant.configure("2") do |config|
     ubuntu.vm.box = ubuntu_box
     ubuntu.vm.hostname = "web-server"
     #Sets the static ip for web servers
-    ubuntu.vm.network "private_network", ip: "10.0.4.2", virtualbox__intnet: "intnet-dmz"
+    ubuntu.vm.network "private_network", ip: "10.0.4.2", virtualbox__intnet: "intnet-dmz", gateway: "10.0.4.1"
     #Runs ansible playbook
     ubuntu.vm.provision "ansible_local", playbook: "ansible/web-server.yml"
     ubuntu.vm.provider "virtualbox" do |v|
@@ -47,12 +47,9 @@ end
     dc.vm.box = "dstoliker/winserver2016-dc"
     dc.vm.communicator ="winrm"
     dc.vm.guest = :windows
-    dc.vm.hostname = "domain-controller"
     dc.vm.network "private_network", ip: "10.0.1.2", virtualbox__intnet: "intnet-lan"
 
     dc.vm.provision "shell", path: "scripts/dc_ipconfig.ps1"
-    dc.vm.provision "reload"
-    dc.vm.provision "shell", path: "scripts/dc_hostname.ps1"
     dc.vm.provider "virtualbox" do |v|
       v.name = "Domain Controller"
   end
@@ -108,7 +105,7 @@ config.vm.define "pfsense" do |pf|
   pf.ssh.shell = "/bin/sh"
   
   pf.vm.provider "virtualbox" do |v|
-    v.name = "Pfsense"
+    v.name = "pfsense"
     v.memory = 1024
     v.cpus = 1
  end
