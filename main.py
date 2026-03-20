@@ -12,6 +12,7 @@ class NetbedLab:
 
         # Modular Node Configuration
         self.nodes = {
+            "pfsense": tk.BooleanVar(value=True),
             "attacker": tk.BooleanVar(value=False),
             "web-server": tk.BooleanVar(value=False),
             "domain-controller": tk.BooleanVar(value=False),
@@ -60,8 +61,7 @@ class NetbedLab:
 
         tk.Label(config_win, text="Select Target Nodes:", font=("Arial", 10, "bold")).pack(pady=10)
 
-        locked_var = tk.BooleanVar(value=True)
-        tk.Checkbutton(config_win, text="pfSense Gateway (Required)", variable=locked_var, state=tk.DISABLED).pack(anchor="w", padx=30)
+    
 
         for node_name, var in self.nodes.items():
             tk.Checkbutton(config_win, text=node_name.capitalize(), variable=var).pack(anchor="w", padx=30)
@@ -70,7 +70,7 @@ class NetbedLab:
 
     def get_selected_nodes(self):
         # Returns a string of selected node names. 
-        selected = ["pfsense"] + [name for name, var in self.nodes.items() if var.get()]
+        selected = [name for name, var in self.nodes.items() if var.get()]
         return " ".join(selected)
 
     #  Console Logging Logic 
