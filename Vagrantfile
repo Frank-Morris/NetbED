@@ -26,6 +26,8 @@ Vagrant.configure("2") do |config|
     ubuntu.vm.provision "ansible_local", playbook: "ansible/web-server.yml"
     ubuntu.vm.provider "virtualbox" do |v|
       v.name = "Web Server"
+      v.memory = 1024
+      v.cpus = 1
   end 
 end
 
@@ -38,6 +40,8 @@ end
     kali.vm.provision "ansible_local", playbook: "ansible/attacker.yml" 
     kali.vm.provider "virtualbox" do |v|
       v.name = "Attacker"
+      v.memory = 2048
+      v.cpus = 2
   end
 end
 
@@ -51,6 +55,8 @@ end
 
     dc.vm.provision "shell", path: "scripts/dc_ipconfig.ps1"
     dc.vm.provider "virtualbox" do |v|
+      v.memory = 2048
+      v.cpus = 2
       v.name = "Domain Controller"
   end
 end
@@ -86,6 +92,7 @@ end
       v.customize ["modifyvm", :id, "--vram", "128"]
       v.customize ["modifyvm", :id, "--graphicscontroller", "vmsvga"]
       v.name = "Client"
+      
  end
 end
 ##################################################################################################################################################################################################
@@ -106,7 +113,7 @@ config.vm.define "pfsense" do |pf|
   
   pf.vm.provider "virtualbox" do |v|
     v.name = "pfsense"
-    v.memory = 1024
+    v.memory = 512
     v.cpus = 1
  end
 
