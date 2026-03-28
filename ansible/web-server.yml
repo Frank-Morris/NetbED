@@ -28,8 +28,6 @@
       notify: apply Netplan
 
 
-
-
     - name: Update apt package cache
       ansible.builtin.apt:
         update_cache: true
@@ -38,6 +36,15 @@
       ansible.builtin.apt:
         name: apache2
         state: present
+
+    - name: Force Netplan to apply now
+      ansible.builtin.meta: flush_handlers
+
+    - name: Strip all instances of NAT default gateway
+      ansible.builtin.shell: |
+        while ip route del default via 10.0.2.2 dev enp0s3; do :; done
+      ignore_errors: true
+
 
   handlers:
     - name: apply Netplan

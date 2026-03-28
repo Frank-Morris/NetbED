@@ -16,6 +16,12 @@
         conn_reload: true
       notify: Restart Networking
 
+    - name: Permanently ignore NAT routes on eth0
+      ansible.builtin.shell: |
+        nmcli device modify eth0 ipv4.ignore-auto-routes yes
+        while ip route del default via 10.0.2.2 dev eth0; do :; done
+      ignore_errors: true
+
   handlers:
     - name: Restart Networking
       service:
