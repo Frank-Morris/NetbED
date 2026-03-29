@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox, Toplevel, scrolledtext
+from tkinter import messagebox, Toplevel, scrolledtext, simpledialog
 import subprocess
 import threading
 
@@ -39,6 +39,16 @@ class NetbedLab:
 
         self.destroy_btn = tk.Button(self.control_frame, text="Delete Lab", width=20, bg="red", fg="white", command=self.delete_lab)
         self.destroy_btn.pack(pady=10)
+
+        # Snapshot Section
+        tk.Label(self.control_frame, text="--- Snapshots ---").pack(pady=(10, 0))
+        
+        tk.Label(self.control_frame, text="Snapshot lists").pack(pady=(5,0))
+        self.snap_list = tk.Listbox(self.control_frame, height=5)
+        self.snap_list.pack(pady=5)
+
+        tk.Button(self.control_frame, text="Create Snapshot", command=self.snap_save).pack(pady=2)
+        tk.Button(self.control_frame, text="Restore Snapshot", command=self.snap_load).pack(pady=2)
 
 
         # Right Frame: Log Console
@@ -127,6 +137,32 @@ class NetbedLab:
         self.stop_btn.config(state=state)
         self.destroy_btn.config(state=state)
         self.config_btn.config(state=state)
+
+    def snap_save(self):
+        # Step 2: System prompts user for a name
+        name = simpledialog.askstring("Snapshot", "Enter snapshot name:")
+        selected = self.get_selected_nodes()
+        if name and selected:
+            self.snap_list.insert(tk.END, name)
+            self.run_subprocess(f'vagrant snapshot save {selected} "{name}"')
+        else:
+            self.snap_list.insert(tk.END, name)
+            self.run_subprocess(f'vagrant snapshot save "{name}"')
+
+    def snap_load(self):
+        # Step 5: Get the name you clicked in the list
+        name = self.snap_list.get(tk.ACTIVE)
+        selected = self.get_selected_nodes()
+        
+        if name:
+            # Step 6: Backend CLI executes 'vagrant snapshot restore <name>'
+            # This restores the whole environment back to that state.
+            self.run_subprocess(f'vagrant snapshot restore {selected} "{name}" --no-start')
+            self.run_subprocess(f'vboxmanage startvm {selected} --type headless')
+
+
+
+
 
 if __name__ == "__main__":
     root = tk.Tk()
