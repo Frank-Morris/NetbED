@@ -139,7 +139,7 @@ class NetbedLab:
         self.config_btn.config(state=state)
 
     def snap_save(self):
-        # Step 2: System prompts user for a name
+        # System prompts user for a name and adds to list
         name = simpledialog.askstring("Snapshot", "Enter snapshot name:")
         selected = self.get_selected_nodes()
         if name and selected:
@@ -150,15 +150,14 @@ class NetbedLab:
             self.run_subprocess(f'vagrant snapshot save "{name}"')
 
     def snap_load(self):
-        # Step 5: Get the name you clicked in the list
+        #Get the name from the list
         name = self.snap_list.get(tk.ACTIVE)
         selected = self.get_selected_nodes()
         
         if name:
-            # Step 6: Backend CLI executes 'vagrant snapshot restore <name>'
-            # This restores the whole environment back to that state.
+            # restores the whole environment back to that state.
             self.run_subprocess(f'vagrant snapshot restore {selected} "{name}" --no-start')
-            self.run_subprocess(f'vboxmanage startvm {selected} --type headless')
+
 
 
 
