@@ -34,8 +34,8 @@ class NetbedLab:
         self.start_btn = tk.Button(self.control_frame, text="Start Lab", width=20, bg="green", fg="white", command=self.start_lab)
         self.start_btn.pack(pady=10)
 
-        self.stop_btn = tk.Button(self.control_frame, text="Stop Lab", width=20, command=self.stop_lab)
-        self.stop_btn.pack(pady=10)
+        self.suspend_btn = tk.Button(self.control_frame, text="Suspend Lab", width=20, command=self.suspend_lab)
+        self.suspend_btn.pack(pady=10)
 
         self.destroy_btn = tk.Button(self.control_frame, text="Delete Lab", width=20, bg="red", fg="white", command=self.delete_lab)
         self.destroy_btn.pack(pady=10)
@@ -120,9 +120,9 @@ class NetbedLab:
         command = f"vagrant up {selected}"
         self.run_subprocess(command)
 
-    def stop_lab(self):
+    def suspend_lab(self):
         selected = self.get_selected_nodes()
-        command = f"vagrant halt {selected}"
+        command = f"vagrant suspend {selected}"
         self.run_subprocess(command)
 
     def delete_lab(self):
@@ -134,7 +134,7 @@ class NetbedLab:
     def set_gui_state(self, state):
         # Dynamically enables or disables the controls to prevent concurrent Vagrant locks.
         self.start_btn.config(state=state)
-        self.stop_btn.config(state=state)
+        self.suspend_btn.config(state=state)
         self.destroy_btn.config(state=state)
         self.config_btn.config(state=state)
 
