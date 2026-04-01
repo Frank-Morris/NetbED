@@ -36,7 +36,8 @@ end
     kali.vm.box = kali_box
     kali.vm.hostname = "attacker"
     kali.vm.network "private_network", ip: "10.0.3.2", virtualbox__intnet: "intnet-attacker"
-
+    kali.vm.boot_timeout = 600
+    kali.ssh.connect_timeout = 30
     kali.vm.provision "ansible_local", playbook: "ansible/attacker.yml" 
     kali.vm.provider "virtualbox" do |v|
       v.name = "Attacker"
@@ -52,7 +53,8 @@ end
     dc.vm.communicator ="winrm"
     dc.vm.guest = :windows
     dc.vm.network "private_network", ip: "10.0.1.2", virtualbox__intnet: "intnet-lan"
-
+    dc.vm.boot_timeout = 600
+    dc.ssh.connect_timeout = 30
     dc.vm.provision "shell", path: "scripts/dc_ipconfig.ps1"
     dc.vm.provider "virtualbox" do |v|
       v.memory = 2048
@@ -74,18 +76,15 @@ end
     client.vm.network "private_network", ip: "10.0.1.3", auto_config: false, virtualbox__intnet: "intnet-lan"
     client.ssh.username = "vagrant"
     client.ssh.password = "vagrant"
-    
+    client.ssh.connect_timeout = 30
+
     #sets hostname of machine
     client.vm.provision "shell", path: "scripts/hostname.ps1"
-    
     #reloads machine to confirm the hostname change.
     client.vm.provision "reload"
-    
     #Runs shellscript to configure static IP
     client.vm.provision "shell", path: "scripts/ipconfig.ps1"
   
-  
-
     client.vm.provider "virtualbox" do |v|
       v.memory = 4096
       v.cpus = 2
@@ -99,18 +98,17 @@ end
 
 #This is the config for the pfsense firewall
 config.vm.define "pfsense" do |pf|
-  pf.vm.box ="nandillonmax/Pfsense-max"
+  pf.vm.box ="Netbed/pfsense"
   pf.vm.synced_folder ".", "/vagrant", disabled: true
-
   pf.vm.guest = :openbsd
 
   pf.vm.network "private_network", ip: "10.0.1.1", virtualbox__intnet: "intnet-lan", auto_config: false
   pf.vm.network "private_network", ip: "10.0.3.1", virtualbox__intnet: "intnet-attacker", auto_config: false
   pf.vm.network "private_network", ip: "10.0.4.1", virtualbox__intnet: "intnet-dmz", auto_config: false
   pf.vm.allow_hosts_modification = false
-
+  pf.vm.boot_timeout = 600
+  pf.ssh.connect_timeout = 30
   pf.ssh.shell = "/bin/sh"
-  
   pf.vm.provider "virtualbox" do |v|
     v.name = "pfsense"
     v.memory = 512
@@ -121,10 +119,6 @@ config.vm.define "pfsense" do |pf|
   pf.ssh.username = "root"
   pf.ssh.password = "pfsense"
   pf.ssh.shell = "/bin/sh"
-  
-
-
-
   pf.vm.provision "file", source: "pfsense_config.xml", destination: "/tmp/pfsense_config.xml"
   pf.vm.provision "shell", 
     privileged: false,
