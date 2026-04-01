@@ -22,6 +22,14 @@
         while ip route del default via 10.0.2.2 dev eth0; do :; done
       ignore_errors: true
 
+    - name: Prevent eth0 from asserting default route on resume
+      community.general.nmcli:
+        conn_name: "Wired connection 1"
+        type: ethernet
+        ifname: eth0
+        never_default4: true
+        state: present
+
   handlers:
     - name: Restart Networking
       service:
