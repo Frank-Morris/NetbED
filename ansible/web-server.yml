@@ -22,9 +22,17 @@
                   - to: default
                     via: 10.0.4.1
                     metric: 50
-                
                 nameservers:
                   addresses: [8.8.8.8, 8.8.4.4]
+              enp0s3:
+                dhcp4: yes
+                dhcp6: no
+                dhcp4-overrides:
+                  use-routes: false
+                dhcp6-overrides:
+                  use-routes: false
+
+
       notify: apply Netplan
 
 
