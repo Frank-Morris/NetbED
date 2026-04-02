@@ -3,6 +3,7 @@
   hosts: all
   become: true
   tasks:
+
   #Network configuration ( static ip)
     - name: Add an Ethernet connection with static IP configuration
       community.general.nmcli:
