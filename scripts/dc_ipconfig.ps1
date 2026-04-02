@@ -33,7 +33,7 @@
          Add-DnsServerForwarder -IPAddress "8.8.8.8", "1.1.1.1" -PassThru -ErrorAction SilentlyContinue
 
          # 3. Hard Isolation: Delete the Vagrant NAT 'Backdoor' Gateway route
-         Write-Host "Disabling default vagrant NAT backdoor"
+         Write-Host "Disabling default vagrant NAT route"
          Remove-NetRoute -DestinationPrefix "0.0.0.0/0" -NextHop "10.0.2.2" -Confirm:$false -ErrorAction SilentlyContinue
 
 
