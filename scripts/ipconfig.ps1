@@ -20,6 +20,8 @@
                        -PrefixLength $subnet `
                        -DefaultGateway $gateway
                        
+         Set-DnsClientServerAddress -InterfaceIndex $adapter.InterfaceIndex -ServerAddresses $dns
+                      
          Write-Host "Forcing Windows to stop auto-calculating the metric..."
          # 1. Turn off Automatic Metric using "Disabled" instead of $false
          Set-NetIPInterface -InterfaceIndex $adapter.InterfaceIndex -AutomaticMetric Disabled -InterfaceMetric 10
@@ -28,13 +30,8 @@
          Set-NetRoute -DestinationPrefix "0.0.0.0/0" -InterfaceIndex $adapter.InterfaceIndex -RouteMetric 1 -ErrorAction SilentlyContinue
 
          # 3. Hard Isolation: Delete the Vagrant NAT 'Backdoor' Gateway route
-         Write-Host "Disabling default vagrant NAT backdoor"
+         Write-Host "Disabling default vagrant NAT route"
          Remove-NetRoute -DestinationPrefix "0.0.0.0/0" -NextHop "10.0.2.2" -Confirm:$false -ErrorAction SilentlyContinue
-
-         # 4. Set network to private.
-         Write-host "Wait 10 seconds to apply network to private"
-         Start-Sleep -Seconds 10
-         Set-NetConnectionProfile -InterfaceAlias $adapter.InterfaceAlias -NetworkCategory Private
 
      } else {
         Write-Error "No valid adapter has been located" 
