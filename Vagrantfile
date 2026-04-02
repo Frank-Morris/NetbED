@@ -67,7 +67,7 @@ end
 ########################################################################################################################################################################################################
 #This is the config for the Windows Client
   config.vm.define "client" do |client|
-    client.vm.box = "sva-mk/Windows-10"
+    client.vm.box = "StefanScherer/windows_10"
     client.vm.communicator = "winrm"
     client.vm.guest = :windows
     client.winrm.retry_limit = 30
@@ -107,7 +107,8 @@ config.vm.define "pfsense" do |pf|
   pf.vm.network "private_network", ip: "10.0.4.1", virtualbox__intnet: "intnet-dmz", auto_config: false
   pf.vm.allow_hosts_modification = false
   pf.vm.boot_timeout = 600
-  pf.ssh.connect_timeout = 30
+  pf.ssh.connect_timeout = 60
+  pf.ssh.keep_alive = false
   pf.ssh.shell = "/bin/sh"
   pf.vm.provider "virtualbox" do |v|
     v.name = "pfsense"
@@ -119,9 +120,9 @@ config.vm.define "pfsense" do |pf|
   pf.ssh.username = "root"
   pf.ssh.password = "pfsense"
   pf.ssh.shell = "/bin/sh"
-  pf.vm.provision "file", source: "pfsense_config.xml", destination: "/tmp/pfsense_config.xml"
+  pf.vm.provision "file", source: "pfsense1_config.xml", destination: "/tmp/pfsense1_config.xml"
   pf.vm.provision "shell", 
     privileged: false,
-    inline: "cp /tmp/pfsense_config.xml /conf/config.xml && rm -f /tmp/config.cache && (daemon -f sh -c 'sleep 5 && pkill -9 sshd && pfctl -e') && (daemon -f /usr/local/bin/php -f /etc/rc.reload_all) && echo 'SUCCESS: Deployment complete. Firewall will engage in 5 seconds.'"
+    inline: "cp /tmp/pfsense1_config.xml /conf/config.xml && rm -f /tmp/config.cache && (daemon -f sh -c 'sleep 10 && pfctl -e') && (daemon -f /usr/local/bin/php -f /etc/rc.reload_all) && echo 'SUCCESS: Deployment complete. Firewall will engage in 5 seconds.'"
 end
 end
