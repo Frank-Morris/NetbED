@@ -34,8 +34,11 @@ class NetbedLab:
         self.start_btn = tk.Button(self.control_frame, text="Start Lab", width=20, bg="green", fg="white", command=self.start_lab)
         self.start_btn.pack(pady=10)
 
-        self.suspend_btn = tk.Button(self.control_frame, text="Suspend Lab", width=20, command=self.suspend_lab)
+        self.suspend_btn = tk.Button(self.control_frame, text="Suspend Lab", width=20, fg="red", command=self.suspend_lab)
         self.suspend_btn.pack(pady=10)
+
+        self.resume_btn = tk.Button(self.control_frame, text="Resume Lab", width=20, fg="green", command=self.resume_lab)
+        self.resume_btn.pack(pady=10)
 
         self.destroy_btn = tk.Button(self.control_frame, text="Delete Lab", width=20, bg="red", fg="white", command=self.delete_lab)
         self.destroy_btn.pack(pady=10)
@@ -125,6 +128,11 @@ class NetbedLab:
         command = f"vagrant suspend {selected}"
         self.run_subprocess(command)
 
+    def resume_lab(self):
+        selected = self.get_selected_nodes()
+        command = f"vagrant resume {selected } --no-provision"
+        self.run_subprocess(command)
+
     def delete_lab(self):
         if messagebox.askyesno("Warning", "Are you sure you want to delete the selected virtual machines?"):
             selected = self.get_selected_nodes()
@@ -135,6 +143,7 @@ class NetbedLab:
         # Dynamically enables or disables the controls to prevent concurrent Vagrant locks.
         self.start_btn.config(state=state)
         self.suspend_btn.config(state=state)
+        self.resume_btn.config(state=state)
         self.destroy_btn.config(state=state)
         self.config_btn.config(state=state)
 
