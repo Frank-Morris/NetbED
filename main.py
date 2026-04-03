@@ -21,30 +21,30 @@ class NetbedLab:
 
         # GUI Layout
         # Title
-        self.title_label = tk.Label(window, text="NetbED Control Panel", font=("Arial", 16, "bold"))
+        self.title_label = tk.Label(window, text="NetbED", font=("Arial", 16, "bold"))
         self.title_label.grid(row=0, column=0, columnspan=2, pady=10)
 
         # Left Frame: Controls
         self.control_frame = tk.Frame(window)
-        self.control_frame.grid(row=1, column=0, padx=20, sticky="n")
+        self.control_frame.grid(row=1, column=0, padx=30, sticky="n")
 
         self.config_btn = tk.Button(self.control_frame, text="Configure Nodes", width=20, bg="blue", fg="white", command=self.open_config)
         self.config_btn.pack(pady=5)
 
         self.start_btn = tk.Button(self.control_frame, text="Start Lab", width=20, bg="green", fg="white", command=self.start_lab)
-        self.start_btn.pack(pady=10)
+        self.start_btn.pack(pady=5)
 
         self.suspend_btn = tk.Button(self.control_frame, text="Suspend Lab", width=20, fg="red", command=self.suspend_lab)
-        self.suspend_btn.pack(pady=10)
+        self.suspend_btn.pack(pady=5)
 
         self.resume_btn = tk.Button(self.control_frame, text="Resume Lab", width=20, fg="green", command=self.resume_lab)
-        self.resume_btn.pack(pady=10)
+        self.resume_btn.pack(pady=5)
 
         self.destroy_btn = tk.Button(self.control_frame, text="Delete Lab", width=20, bg="red", fg="white", command=self.delete_lab)
-        self.destroy_btn.pack(pady=10)
+        self.destroy_btn.pack(pady=5)
 
         # Snapshot Section
-        tk.Label(self.control_frame, text="--- Snapshots ---").pack(pady=(10, 0))
+        tk.Label(self.control_frame, text="--- Snapshots ---").pack(pady=(5, 0))
         
         tk.Label(self.control_frame, text="Snapshot lists").pack(pady=(5,0))
         self.snap_list = tk.Listbox(self.control_frame, height=5)
