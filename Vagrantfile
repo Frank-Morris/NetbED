@@ -123,6 +123,6 @@ config.vm.define "pfsense" do |pf|
   pf.vm.provision "file", source: "pfsense1_config.xml", destination: "/tmp/pfsense1_config.xml"
   pf.vm.provision "shell", 
     privileged: false,
-    inline: "cp /tmp/pfsense1_config.xml /conf/config.xml && rm -f /tmp/config.cache && (daemon -f sh -c 'sleep 10 && pfctl -e') && (daemon -f /usr/local/bin/php -f /etc/rc.reload_all) && echo 'SUCCESS: Deployment complete. Firewall will engage in 5 seconds.'"
+    inline: "cp /tmp/pfsense1_config.xml /conf/config.xml && rm -f /tmp/config.cache && sed -i '' 's/pfctl -d/pfctl -e/' /etc/rc.local && (daemon -f sh -c 'sleep 5 && pfctl -e') && (daemon -f /usr/local/bin/php -f /etc/rc.reload_all) && echo 'SUCCESS: Deployment complete. Firewall will engage in 5 seconds.'"
 end
 end
