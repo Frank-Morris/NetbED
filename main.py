@@ -165,7 +165,7 @@ class NetbedLab:
         
         if name:
             # restores the whole environment back to that state.
-            self.run_subprocess(f'vagrant snapshot restore {selected} "{name}" --no-start')
+            self.run_subprocess(f'vagrant snapshot restore {selected} "{name}"')
 
 
 
