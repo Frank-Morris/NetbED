@@ -242,17 +242,14 @@ NetbED provisions a simulated enterprise network segmented across three isolated
 
 ## Troubleshooting
 
+| Issue | Likely Cause | Resolution |
+| :--- | :--- | :--- |
 | `Start Lab / vagrant up` fails immediately | Vagrant or VirtualBox not installed correctly | Reinstall both and ensure the `vagrant-reload` plugin is installed |
-
-| Machines time out during provisioning | Insufficient RAM on host | Close other applications to free memory and retry |
-
+| Machines time out during provisioning | Insufficient RAM on host | Click Start Lab again, Vagrant will resume from where it failed, Close other applications to free memory and retry |
 | Python not found | Python not added to PATH | Reinstall Python and tick **Add Python to PATH** |
 | GUI does not open | Python not installed or wrong version | Verify with `python --version` |
-
 | Snapshot names missing after restart | Listbox is cleared on application restart | Snapshots are still in VirtualBox Manager |
-
 | Deployment fails mid-way through | Box download interrupted | Click `Start Lab` again, Vagrant will resume from where it failed |
-
 | Deployment conflict after `Delete Lab / vagrant destroy` | VirtualBox VM folder persisted on disk | Manually delete the leftover VM folder from your VirtualBox VMs directory, then retry |
 
 ---
