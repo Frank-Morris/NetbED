@@ -1,8 +1,8 @@
-# NetbED — Automated Cybersecurity Lab Deployer
+# NetbED: Automated Cybersecurity Lab Deployer
 
 **Francis Morris · B00386292 · BEng (Hons) Cyber Security · University of the West of Scotland · 2026**
 
-NetbED is a portable, automated cybersecurity lab deployer that provisions a fully configured five-node virtualised enterprise network through a graphical user interface (GUI). No command-line interaction or manual configuration is required. It is intended for cybersecurity students, researchers and security professionals who require a consistent, reproducible and isolated lab environment for security testing and practice.
+NetbED is a portable, automated cybersecurity lab deployer that provisions a fully configured five-node virtualised enterprise network through a graphical user interface (GUI). No command-line interaction or manual configuration is required but is possible. It is intended for cybersecurity students, researchers and security professionals who require a consistent, reproducible and isolated lab environment for security testing and practice.
 
 ---
 
@@ -78,6 +78,7 @@ Tkinter comes pre-installed with Python and does not require a separate installa
 1. Download or clone the NetbED project folder to your machine
 2. Place the folder somewhere accessible, for example your Desktop or Documents folder
 3. The project folder should contain the following:
+```text
 NetbED/
 ├── Vagrantfile
 ├── main.py
@@ -91,7 +92,7 @@ NetbED/
 ├── dc_ipconfig.ps1
 ├── hostname.ps1
 └── ipconfig.ps1
-
+```
 > **Note:** If any of these files are missing the application will not function correctly.
 
 ---
@@ -113,15 +114,15 @@ The NetbED control panel will open.
 
 ### Overview of the Control Panel
 
-- **Configure Nodes** — opens the node selection window
-- **Start Lab** — deploys the selected nodes
-- **Suspend Lab** — saves the running memory state of the selected nodes to disk
-- **Resume Lab** — restores selected nodes from a suspended state without re-provisioning
-- **Delete Lab** — permanently removes the selected nodes
-- **Create Snapshot** — saves the current state of a running machine with a named snapshot
-- **Restore Snapshot** — restores a machine to a previously saved snapshot
-- **Snapshot listbox** — displays saved snapshot names for the current session
-- **Console Output window** — streams live Vagrant output during deployment
+- **Configure Nodes** - opens the node selection window
+- **Start Lab** - deploys the selected nodes
+- **Suspend Lab** - saves the running memory state of the selected nodes to disk
+- **Resume Lab** - restores selected nodes from a suspended state without re-provisioning
+- **Delete Lab** - permanently removes the selected nodes
+- **Create Snapshot** - saves the current state of a running machine with a named snapshot
+- **Restore Snapshot** - restores a machine to a previously saved snapshot
+- **Snapshot listbox** - displays saved snapshot names for the current session
+- **Console Output window** - streams live Vagrant output during deployment
 
 ---
 
@@ -131,7 +132,7 @@ By default, all nodes deploy when you click Start Lab. To select specific nodes:
 
 1. Click **Configure Nodes**
 2. A popup window will appear showing all five nodes:
-   - pfSense *(selected by default — required for all deployments)*
+   - pfSense *(selected by default - required for all deployments)*
    - Domain Controller
    - Windows Client
    - Kali Linux
@@ -174,7 +175,7 @@ Suspend saves the full running memory state of each machine to disk, allowing th
 
 1. Select the nodes you want to delete using **Configure Nodes**
 2. Click **Delete Lab**
-3. A confirmation dialog will appear — click **Yes** to proceed
+3. A confirmation dialog will appear - click **Yes** to proceed
 
 > **Warning:** This action cannot be undone. Use snapshots to save state before deleting.
 
@@ -202,17 +203,23 @@ Suspend saves the full running memory state of each machine to disk, allowing th
 
 ## Accessing the Virtual Machines
 
-Access each machine through VirtualBox Manager by double-clicking the machine you want to open.
+Access each machine through VirtualBox Manager by double-clicking the machine you want to open:
+
+**Username**: Vagrant
+
+**Password**: Vagrant
+
+>**Note:** This is the username and Password for all Virtual Machines.
 
 For the Linux nodes you can also SSH in from the project directory:
-vagrant ssh attacker
+vagrant ssh attacker,
 vagrant ssh web-server
 
 ---
 
 ## Network Topology
 
-NetbED provisions a simulated enterprise network segmented across three isolated internal networks, all routed through pfSense. The attacker cannot reach the LAN directly — all traffic must pass through pfSense where firewall rules enforce the boundaries.
+NetbED provisions a simulated enterprise network segmented across three isolated internal networks, all routed through pfSense. The attacker cannot reach the LAN directly - all traffic must pass through pfSense where firewall rules enforce the boundaries.
 
 | Node | Operating System | IP Address | Role |
 |---|---|---|---|
@@ -244,9 +251,9 @@ NetbED provisions a simulated enterprise network segmented across three isolated
 
 | Snapshot names missing after restart | Listbox is cleared on application restart | Snapshots are still in VirtualBox Manager |
 
-| Deployment fails mid-way through | Box download interrupted | Click `Start Lab` again — Vagrant will resume from where it failed |
+| Deployment fails mid-way through | Box download interrupted | Click `Start Lab` again, Vagrant will resume from where it failed |
 
-| Deployment conflict after `vagrant destroy` | VirtualBox VM folder persisted on disk | Manually delete the leftover VM folder from your VirtualBox VMs directory, then retry |
+| Deployment conflict after `Delete Lab / vagrant destroy` | VirtualBox VM folder persisted on disk | Manually delete the leftover VM folder from your VirtualBox VMs directory, then retry |
 
 ---
 
