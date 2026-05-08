@@ -83,19 +83,12 @@ NetbED/
 | File | Description |
 |---|---|
 | `Vagrantfile` | Core orchestration file in Ruby syntax. Defines all five node configurations including architecture detection, box selection, resource allocation, network adapter assignment and provisioner references. |
-
 | `main.py` | Python entry point for the NetbED GUI. Contains all Tkinter interface logic, subprocess handling, threading, node selection and snapshot management. |
-
 | `pfsense1_config.xml` | Pre-validated pfSense configuration file. Injected into the pfSense guest during provisioning to apply interface definitions and firewall rules automatically. |
-
 | `Ansible/attacker.yml` | Ansible playbook for Kali Linux. Configures static IP on `eth1` via `community.general.nmcli`, prevents NAT route reassertion on `eth0` and removes the Vagrant NAT default gateway route. |
-
 | `Ansible/web-server.yml` | Ansible playbook for Ubuntu. Writes Netplan config with `use-routes: false` on `enp0s3`, installs Apache while NAT is still active, defers Netplan apply until after installation, then strips the NAT default route. |
-
 | `Scripts/hostname.ps1` | PowerShell script for the Windows Client hostname. Idempotent - only renames if the current hostname differs from the target. |
-
 | `Scripts/ipconfig.ps1` | PowerShell script for the Windows Client. Discovers the secondary adapter, strips APIPA, applies static IP, sets DNS to the Domain Controller, disables automatic metric and removes the Vagrant NAT default gateway route. |
-
 | `Scripts/dc_ipconfig.ps1` | PowerShell script for the Domain Controller. Applies static IP, sets DNS loopback, adds external forwarders (8.8.8.8, 1.1.1.1), disables automatic metric and removes the Vagrant NAT default gateway route. |
 
 ---
