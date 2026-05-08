@@ -61,9 +61,14 @@ All five nodes communicate through three isolated Internal Network segments enfo
 | DMZ | intnet-dmz | 10.0.4.1 | Ubuntu Web Server (10.0.4.2) |
 | Attacker | intnet-attacker | 10.0.3.1 | Kali Linux (10.0.3.2) |
 
+### 2.4 Vagrant Box Format
+
+Vagrant boxes compatible with VirtualBox are packaged in the Open Virtualisation Archive format (OVA). This is a single-file distribution that bundles the virtual disk image and configuration metadata into one portable file. When `vagrant up` is executed, Vagrant invokes `VBoxManage import` internally, which extracts the disk image and registers the virtual machine with VirtualBox automatically. The user never needs to manually import or configure the machine.
+
 ---
 
 ## 3. Project Structure
+
 ```text
 NetbED/
 ├── Vagrantfile
@@ -75,9 +80,9 @@ NetbED/
 │   ├── attacker.yml
 │   └── web-server.yml
 └── Scripts/
-├── dc_ipconfig.ps1
-├── hostname.ps1
-└── ipconfig.ps1
+    ├── dc_ipconfig.ps1
+    ├── hostname.ps1
+    └── ipconfig.ps1
 ```
 
 | File | Description |
@@ -169,6 +174,7 @@ This plugin is not bundled with Vagrant core. Provisioning the Windows Client wi
 | Box | `Netbed/pfsense` (custom - hosted on Vagrant Cloud) |
 | OS | FreeBSD |
 | Role | Central gateway and firewall for all network segments |
+| Box Size | ~603 MB |
 | RAM | 512 MB |
 | CPU | 1 core |
 | WAN | vtnet0 (Vagrant NAT - DHCP) |
@@ -186,6 +192,7 @@ The custom `Netbed/pfsense` box was built from a configured pfSense VM with SSH 
 | Box | `dstoliker/winserver2016-dc` |
 | OS | Windows Server 2016 |
 | Role | DNS server for intnet-lan |
+| Box Size | ~5.60 GB |
 | IP Address | 10.0.1.2 |
 | Gateway | 10.0.1.1 (pfSense LAN) |
 | DNS | 127.0.0.1 (loopback) |
@@ -202,6 +209,7 @@ The custom `Netbed/pfsense` box was built from a configured pfSense VM with SSH 
 | Box | `StefanScherer/windows_10` |
 | OS | Windows 10 |
 | Role | Simulated enterprise endpoint |
+| Box Size | ~18.6 GB |
 | IP Address | 10.0.1.3 |
 | Gateway | 10.0.1.1 (pfSense LAN) |
 | DNS | 10.0.1.2 (Domain Controller) |
@@ -210,7 +218,7 @@ The custom `Netbed/pfsense` box was built from a configured pfSense VM with SSH 
 | VRAM | 128 MB |
 | Graphics Controller | VMSVGA |
 | Communicator | WinRM (`retry_limit: 30`, `retry_delay: 10`) |
-| Provisioning | `Scripts/hostname.ps1` → `vagrant-reload` → `Scripts/ipconfig.ps1` |
+| Provisioning | `Scripts/hostname.ps1` then `vagrant-reload` then `Scripts/ipconfig.ps1` |
 
 ### 6.4 Kali Linux Attacker
 
@@ -219,6 +227,7 @@ The custom `Netbed/pfsense` box was built from a configured pfSense VM with SSH 
 | Box | `kalilinux/rolling` (x86) |
 | OS | Kali Linux |
 | Role | Simulated external threat actor |
+| Box Size | ~14.2 GB |
 | IP Address | 10.0.3.2 |
 | Gateway | 10.0.3.1 (pfSense Attacker interface) |
 | RAM | 2048 MB |
@@ -233,12 +242,15 @@ The custom `Netbed/pfsense` box was built from a configured pfSense VM with SSH 
 | Box | `ubuntu/jammy64` (x86) |
 | OS | Ubuntu 22.04 LTS |
 | Role | DMZ web server |
+| Box Size | ~616 MB |
 | IP Address | 10.0.4.2 |
 | Gateway | 10.0.4.1 (pfSense DMZ interface) |
 | RAM | 1024 MB |
 | CPU | 1 core |
 | Provisioning | `ansible_local` - `Ansible/web-server.yml` |
 | Services | Apache HTTP Server |
+
+> **Total box download size on first run: approximately 39.6 GB.** Subsequent deployments use locally cached boxes and require no re-download.
 
 ---
 
@@ -262,42 +274,136 @@ else
 end
 ```
 
-### 7.2 Windows Client - VirtualBox Customisations
+### 7.2 Web Server
 
-The Windows Client includes additional VirtualBox provider customisations to ensure the display renders correctly in the VirtualBox console.
-
-```ruby
-v.customize ["modifyvm", :id, "--vram", "128"]
-v.customize ["modifyvm", :id, "--graphicscontroller", "vmsvga"]
-```
-
-### 7.3 Windows Client - WinRM and Provisioning Chain
+The web server is the first node defined. It uses the architecture-detected `ubuntu_box` variable, assigns it to `intnet-dmz` and runs the Ansible playbook via `ansible_local`.
 
 ```ruby
-client.winrm.retry_limit = 30
-client.winrm.retry_delay = 10
-client.vm.boot_timeout = 600
-
-client.vm.provision "shell", path: "scripts/hostname.ps1"
-client.vm.provision "reload"
-client.vm.provision "shell", path: "scripts/ipconfig.ps1"
+config.vm.define "web-server" do |ubuntu|
+  ubuntu.vm.box = ubuntu_box
+  ubuntu.vm.hostname = "web-server"
+  ubuntu.vm.network "private_network", ip: "10.0.4.2", virtualbox__intnet: "intnet-dmz", gateway: "10.0.4.1"
+  ubuntu.vm.provision "ansible_local", playbook: "ansible/web-server.yml"
+  ubuntu.vm.provider "virtualbox" do |v|
+    v.name = "Web Server"
+    v.memory = 1024
+    v.cpus = 1
+  end
+end
 ```
 
-The `vagrant-reload` plugin injects a controlled reboot between the hostname rename and the IP configuration script. This ordering is mandatory - see Section 10.3.
+### 7.3 Attacker
 
-### 7.4 pfSense Provisioner
+The Kali Linux attacker node uses the architecture-detected `kali_box` variable, assigns it to `intnet-attacker` and runs the attacker playbook via `ansible_local`. Boot and SSH timeouts are extended to account for the larger Kali image taking longer to initialise.
 
 ```ruby
-pf.vm.provision "file", source: "pfsense1_config.xml", destination: "/tmp/pfsense1_config.xml"
-pf.vm.provision "shell",
-  privileged: false,
-  inline: "cp /tmp/pfsense1_config.xml /conf/config.xml && \
-           rm -f /tmp/config.cache && \
-           sed -i '' 's/pfctl -d/pfctl -e/' /etc/rc.local && \
-           (daemon -f sh -c 'sleep 5 && pfctl -e') && \
-           (daemon -f /usr/local/bin/php -f /etc/rc.reload_all) && \
-           echo 'SUCCESS: Deployment complete. Firewall will engage in 5 seconds.'"
+config.vm.define "attacker" do |kali|
+  kali.vm.box = kali_box
+  kali.vm.hostname = "attacker"
+  kali.vm.network "private_network", ip: "10.0.3.2", virtualbox__intnet: "intnet-attacker"
+  kali.vm.boot_timeout = 600
+  kali.ssh.connect_timeout = 30
+  kali.vm.provision "ansible_local", playbook: "ansible/attacker.yml"
+  kali.vm.provider "virtualbox" do |v|
+    v.name = "Attacker"
+    v.memory = 2048
+    v.cpus = 2
+  end
+end
 ```
+
+### 7.4 Domain Controller
+
+The Domain Controller uses WinRM as its communicator, assigns it to `intnet-lan` and runs `dc_ipconfig.ps1` via the shell provisioner. Boot timeout is extended to account for Windows Server taking longer to initialise than Linux nodes.
+
+```ruby
+config.vm.define "domain-controller" do |dc|
+  dc.vm.box = "dstoliker/winserver2016-dc"
+  dc.vm.communicator = "winrm"
+  dc.vm.guest = :windows
+  dc.vm.network "private_network", ip: "10.0.1.2", virtualbox__intnet: "intnet-lan"
+  dc.vm.boot_timeout = 600
+  dc.ssh.connect_timeout = 30
+  dc.vm.provision "shell", path: "scripts/dc_ipconfig.ps1"
+  dc.vm.provider "virtualbox" do |v|
+    v.memory = 2048
+    v.cpus = 2
+    v.name = "Domain Controller"
+  end
+end
+```
+
+### 7.5 Windows Client
+
+The Windows Client uses WinRM as its communicator and assigns it to `intnet-lan`. It includes additional VirtualBox customisations to ensure the display renders correctly in the console. The provisioning chain is sequential and order-dependent - see Section 10.3 for why.
+
+```ruby
+config.vm.define "client" do |client|
+  client.vm.box = "StefanScherer/windows_10"
+  client.vm.communicator = "winrm"
+  client.vm.guest = :windows
+  client.winrm.retry_limit = 30
+  client.winrm.retry_delay = 10
+  client.vm.boot_timeout = 600
+  client.vm.network "private_network", ip: "10.0.1.3", auto_config: false, virtualbox__intnet: "intnet-lan"
+  client.ssh.username = "vagrant"
+  client.ssh.password = "vagrant"
+  client.ssh.connect_timeout = 30
+
+  client.vm.provision "shell", path: "scripts/hostname.ps1"
+  client.vm.provision "reload"
+  client.vm.provision "shell", path: "scripts/ipconfig.ps1"
+
+  client.vm.provider "virtualbox" do |v|
+    v.memory = 4096
+    v.cpus = 2
+    v.customize ["modifyvm", :id, "--vram", "128"]
+    v.customize ["modifyvm", :id, "--graphicscontroller", "vmsvga"]
+    v.name = "Client"
+  end
+end
+```
+
+### 7.6 pfSense
+
+pfSense uses OpenBSD as the guest type and SSH with root credentials as the communicator. Synced folders are disabled as pfSense does not support VirtualBox guest additions. The provisioner uploads the XML config file and runs an inline shell command to inject it and enable the packet filter.
+
+```ruby
+config.vm.define "pfsense" do |pf|
+  pf.vm.box = "Netbed/pfsense"
+  pf.vm.synced_folder ".", "/vagrant", disabled: true
+  pf.vm.guest = :openbsd
+  pf.vm.network "private_network", ip: "10.0.1.1", virtualbox__intnet: "intnet-lan", auto_config: false
+  pf.vm.network "private_network", ip: "10.0.3.1", virtualbox__intnet: "intnet-attacker", auto_config: false
+  pf.vm.network "private_network", ip: "10.0.4.1", virtualbox__intnet: "intnet-dmz", auto_config: false
+  pf.vm.allow_hosts_modification = false
+  pf.vm.boot_timeout = 600
+  pf.ssh.connect_timeout = 60
+  pf.ssh.keep_alive = false
+  pf.ssh.insert_key = false
+  pf.ssh.username = "root"
+  pf.ssh.password = "pfsense"
+  pf.ssh.shell = "/bin/sh"
+  pf.vm.provider "virtualbox" do |v|
+    v.name = "pfsense"
+    v.memory = 512
+    v.cpus = 1
+  end
+  pf.vm.provision "file", source: "pfsense1_config.xml", destination: "/tmp/pfsense1_config.xml"
+  pf.vm.provision "shell",
+    privileged: false,
+    inline: "cp /tmp/pfsense1_config.xml /conf/config.xml && \
+             rm -f /tmp/config.cache && \
+             sed -i '' 's/pfctl -d/pfctl -e/' /etc/rc.local && \
+             (daemon -f sh -c 'sleep 5 && pfctl -e') && \
+             (daemon -f /usr/local/bin/php -f /etc/rc.reload_all) && \
+             echo 'SUCCESS: Deployment complete. Firewall will engage in 5 seconds.'"
+end
+```
+
+### 7.7 WinRM Management Channel
+
+Vagrant uses WinRM as the management channel for Windows guest VMs, equivalent to SSH for Linux nodes. VirtualBox is instructed to forward port 55985 on the host to port 5985 inside the Windows VM. This is what allows Vagrant to deliver and execute PowerShell provisioning scripts without any manual interaction. Without this port forwarding in place, Vagrant would have no way to communicate with the Windows guest after boot.
 
 ---
 
@@ -455,7 +561,7 @@ if ($adapter) {
 
 ### 9.4 `Ansible/attacker.yml` - Kali Linux
 
-Configures the Kali Linux attacker node using `community.general.nmcli` to create a persistent static IP connection. Includes three separate NAT isolation tasks to prevent the Vagrant management adapter from reasserting its default route.
+Configures the Kali Linux attacker node using `community.general.nmcli` to create a persistent static IP connection. Includes three separate NAT isolation tasks to prevent the Vagrant management adapter from reasserting its default route. The `community.general.nmcli` module requires the `community.general` Ansible collection to be available inside the guest VM.
 
 ```yaml
 ---
@@ -632,7 +738,7 @@ def run_subprocess(self, command):
 ### 10.3 Windows Provisioning - Dependency Chain
 
 The order of operations in the Vagrantfile is critical for Windows Client provisioning.
-hostname.ps1  →  vagrant-reload  →  ipconfig.ps1
+hostname.ps1  >  vagrant-reload  >  ipconfig.ps1
 
 - `hostname.ps1` must run first - triggers a rename if needed
 - `vagrant-reload` must happen immediately after - finalises the NetBIOS name change
@@ -686,7 +792,7 @@ The Vagrant provisioner applied a static IP but without a `routes` block, meanin
 
 ### 10.6 pfSense - Initial Configuration and Subnet Mismatch
 
-**The challenge:** pfSense stores its entire state - interfaces, firewall rules, NAT settings, in a single XML file (`/conf/config.xml`). Automating the lab requires injecting a pre-configured XML file during boot. However, generating this file requires accessing the pfSense WebGUI from another node.
+**The challenge:** pfSense stores its entire state - interfaces, firewall rules, NAT settings - in a single XML file (`/conf/config.xml`). Automating the lab requires injecting a pre-configured XML file during boot. However, generating this file requires accessing the pfSense WebGUI from another node.
 
 A fresh pfSense installation defaults its LAN interface to `192.168.1.1/24`. The Windows Client was on `10.0.1.3/24`. The subnet mismatch meant the client could not reach the WebGUI, making initial configuration impossible.
 
@@ -694,10 +800,16 @@ A fresh pfSense installation defaults its LAN interface to `192.168.1.1/24`. The
 
 1. **Manual network override:** Accessed the pfSense console directly via VirtualBox. Menu option 2 (Set interface(s) IP address) manually assigned the LAN interface to `10.0.1.1/24`
 2. **WebGUI configuration:** With pfSense on the same subnet, the WebGUI was accessed at `https://10.0.1.1` from the Windows Client. Remaining interfaces and firewall rules were configured
-3. **XML export:** The finalised configuration was exported via pfSense Diagnostics → Backup & Restore as `pfsense1_config.xml`
+3. **XML export:** The finalised configuration was exported via pfSense Diagnostics, Backup and Restore as `pfsense1_config.xml`
 4. **Automated injection:** The exported XML is now injected on every deployment via the Vagrant shell provisioner, eliminating all manual steps for end users
 
 A custom Vagrant box (`Netbed/pfsense`) was built from the configured VM with SSH pre-enabled, removing the requirement to manually enable SSH through the pfSense console before each deployment.
+
+---
+
+### 10.7 Stop Lab Removed - Replaced by Suspend/Resume
+
+The Stop Lab button (`vagrant halt`) was removed from the GUI after it was found that halting virtual machines caused the Vagrant NAT default gateway route to reassert itself on next boot, bypassing the pfSense firewall topology entirely. Suspend and Resume (`vagrant suspend` / `vagrant resume --no-provision`) were implemented as the replacement. Suspending preserves the full machine state to disk and resuming restores it without re-provisioning, which prevents the NAT route from reasserting and keeps all routing through pfSense intact.
 
 ---
 
@@ -706,11 +818,13 @@ A custom Vagrant box (`Netbed/pfsense`) was built from the configured VM with SS
 | Issue | Cause | Current Workaround | Planned Fix |
 |---|---|---|---|
 | ARM architecture not supported | pfSense box is x86-64 only | Use an x86-64 host machine | No current solution |
+| First run requires internet connection | Vagrant boxes downloaded from Vagrant Cloud on first run, approximately 39.6 GB total | Ensure internet access is available. Some university or corporate networks may block external downloads | Local box packaging for offline deployment |
 | Active Directory domain promotion not implemented | Not completed within project timeline | DC runs DNS only | Additional PowerShell scripts for domain promotion and client domain join |
 | Snapshot listbox clears on restart | In-memory list, not persisted to disk | Use VirtualBox Manager to access snapshots | JSON file persistence |
 | Snapshot limited to one node at a time | Single-node selection in current implementation | Run snapshot per node individually | Query VirtualBox directly via `VBoxManage` |
 | VirtualBox VM folders can persist after `vagrant destroy` | VirtualBox does not always clean up fully | Manually delete leftover folder before retrying | Investigate `vboxmanage unregistervm --delete` as post-destroy hook |
 | WinRM timeout during Windows provisioning | Windows VM latency during boot | Wait and re-run `vagrant provision` on the affected node | Tuned retry parameters |
+| Provisioning time increases on HDD storage | Slower read/write speeds compared to SSD | Allow additional time - provisioning may take 30 or more minutes on HDD. SSD is recommended | No fix required, hardware dependent |
 
 ---
 
@@ -758,5 +872,3 @@ The isolated and reproducible network segments provide a foundation for AI integ
 | `vagrant-reload` plugin missing | Plugin not installed before provisioning | Run `vagrant plugin install vagrant-reload` |
 
 ---
-
-*NetbED - Francis Morris · B00386292 · BEng (Hons) Cyber Security · University of the West of Scotland · 2026*
